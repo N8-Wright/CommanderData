@@ -1,33 +1,53 @@
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
 #include <iostream>
 #include <string>
 
-namespace Util
-{
-    /// <summary>
-    /// Gets the current directory of the running program.
-    /// </summary>
-    /// <returns>A string representing the current directory path.</returns>
-    std::wstring CurrentDirectory()
-    {
-        std::wstring directory;
-        const auto requiredBufferLength = GetCurrentDirectoryW(0, NULL);
-        directory.reserve(requiredBufferLength);
+#include <Windows.h>
+#include <fileapi.h>
+#include <handleapi.h>
 
-        const auto pathLength = GetCurrentDirectoryW(requiredBufferLength, &directory[0]);
-        if (pathLength == 0)
-        {
-            throw std::exception("Unable to get current directory");
-        }
-
-        return directory;
-    }
-}
+import Filesystem;
 
 int main()
 {
-    const auto directory = Util::CurrentDirectory();
-    std::wcout << directory << std::endl;
+    try
+    {
+        auto directory = Filesystem::CurrentDir();
+        directory.append(L"\\.*");
+
+        std::wcout << directory << std::endl;
+        WIN32_FIND_DATA findData;
+        auto fileHandle = FindFirstFileW(directory.c_str(), &findData);
+        if (fileHandle == INVALID_HANDLE_VALUE)
+        {
+            throw std::exception("Unable to iterate directory");
+        }
+        do
+        {
+            if (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            {
+                std::wcout << findData.cFileName << L"  <DIR>\n";
+            }
+            else
+            {
+                LARGE_INTEGER filesize{};
+                filesize.LowPart = findData.nFileSizeLow;
+                filesize.HighPart = findData.nFileSizeHigh;
+
+                std::wcout << findData.cFileName << L"  " << filesize.QuadPart << L" bytes\n";
+            }
+        } while (FindNextFile(fileHandle, &findData) != 0);
+
+        const auto dwError = GetLastError();
+        if (dwError != ERROR_NO_MORE_FILES)
+        {
+            throw std::exception("Unable to finish iterating directory");
+        }
+
+        FindClose(fileHandle);
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << e.what();
+    }
 }
 
