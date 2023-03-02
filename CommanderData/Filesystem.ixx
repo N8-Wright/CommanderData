@@ -10,4 +10,5 @@ namespace Filesystem
 {
 	export std::wstring CurrentDir();
 	export boost::coroutines2::coroutine<WIN32_FIND_DATA>::pull_type IterateDirectory(const std::wstring& dir = CurrentDir() + L"\\*");
+	export std::string ReadFileContents(const std::wstring& file, size_t size);
 }

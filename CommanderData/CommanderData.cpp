@@ -24,6 +24,8 @@ int main()
                 filesize.HighPart = findData.nFileSizeHigh;
 
                 std::wcout << findData.cFileName << L"  " << filesize.QuadPart << L"\tbytes\n";
+
+                Filesystem::ReadFileContents(findData.cFileName, filesize.QuadPart);
             }
         }
     }

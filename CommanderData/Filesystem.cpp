@@ -2,6 +2,7 @@ module;
 
 #include <string>
 #include <boost/coroutine2/coroutine.hpp>
+#include <fmt/core.h>
 #include <Windows.h>
 
 module Filesystem;
@@ -45,5 +46,43 @@ namespace Filesystem
                 FindClose(findHandle);
             }
         );
+    }
+
+    VOID CALLBACK FileIOCompletionRoutine(
+        __in  DWORD dwErrorCode,
+        __in  DWORD dwNumberOfBytesTransfered,
+        __in  LPOVERLAPPED lpOverlapped)
+    {
+        throw fmt::format("Error code: {}", dwErrorCode);
+    }
+
+    std::string ReadFileContents(const std::wstring& file, size_t size)
+    {
+        HANDLE fileHandle = CreateFile(
+            file.c_str(),
+            GENERIC_READ,
+            FILE_SHARE_READ,
+            NULL,
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
+            NULL);
+
+        if (fileHandle == INVALID_HANDLE_VALUE)
+        {
+            throw std::exception("Unable to open file");
+        }
+
+        std::string fileContents;
+        OVERLAPPED ol = { 0 };
+        fileContents.reserve(size + 1);
+        fileContents.resize(size);
+        if (ReadFileEx(fileHandle, fileContents.data(), size, &ol, FileIOCompletionRoutine) == FALSE)
+        {
+            CloseHandle(fileHandle);
+            throw std::exception("Unable to read file");
+        }
+
+        CloseHandle(fileHandle);
+        return fileContents;
     }
 }
