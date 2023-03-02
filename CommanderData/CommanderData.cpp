@@ -23,9 +23,8 @@ int main()
                 filesize.LowPart = findData.nFileSizeLow;
                 filesize.HighPart = findData.nFileSizeHigh;
 
-                std::wcout << findData.cFileName << L"  " << filesize.QuadPart << L"\tbytes\n";
-
-                Filesystem::ReadFileContents(findData.cFileName, filesize.QuadPart);
+                const auto hash = Filesystem::HashFileContents(findData.cFileName);
+                std::wcout << findData.cFileName << L"\t" << hash << std::endl;
             }
         }
     }

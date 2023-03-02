@@ -1,9 +1,12 @@
 module;
 
 #include <string>
+#include <array>
+#include <sstream>
 #include <boost/coroutine2/coroutine.hpp>
 #include <fmt/core.h>
 #include <Windows.h>
+#include <iomanip>
 
 module Filesystem;
 namespace Filesystem
@@ -48,23 +51,15 @@ namespace Filesystem
         );
     }
 
-    VOID CALLBACK FileIOCompletionRoutine(
-        __in  DWORD dwErrorCode,
-        __in  DWORD dwNumberOfBytesTransfered,
-        __in  LPOVERLAPPED lpOverlapped)
-    {
-        throw fmt::format("Error code: {}", dwErrorCode);
-    }
-
-    std::string ReadFileContents(const std::wstring& file, size_t size)
+    std::wstring HashFileContents(const WCHAR* file)
     {
         HANDLE fileHandle = CreateFile(
-            file.c_str(),
+            file,
             GENERIC_READ,
             FILE_SHARE_READ,
             NULL,
             OPEN_EXISTING,
-            FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
+            FILE_FLAG_SEQUENTIAL_SCAN,
             NULL);
 
         if (fileHandle == INVALID_HANDLE_VALUE)
@@ -72,17 +67,74 @@ namespace Filesystem
             throw std::exception("Unable to open file");
         }
 
-        std::string fileContents;
-        OVERLAPPED ol = { 0 };
-        fileContents.reserve(size + 1);
-        fileContents.resize(size);
-        if (ReadFileEx(fileHandle, fileContents.data(), size, &ol, FileIOCompletionRoutine) == FALSE)
+        HCRYPTPROV cryptoProvider = NULL;
+        if (!CryptAcquireContext(&cryptoProvider,
+            NULL,
+            NULL,
+            PROV_RSA_AES,
+            CRYPT_VERIFYCONTEXT))
         {
             CloseHandle(fileHandle);
-            throw std::exception("Unable to read file");
+            throw std::exception("CryptAcquireContext failed");
         }
 
+        HCRYPTPROV hashHandle = NULL;
+        if (!CryptCreateHash(cryptoProvider, CALG_SHA_256, 0, 0, &hashHandle))
+        {
+            CloseHandle(fileHandle);
+            CryptReleaseContext(cryptoProvider, 0);
+            throw std::exception("CryptCreateHash failed");
+        }
+        
+        auto buffer = std::array<BYTE, 1024>();
+        DWORD bytesRead = 0;
+        auto readResult = ReadFile(fileHandle, buffer.data(), buffer.size(), &bytesRead, 0);
+        while (readResult)
+        {
+            if (bytesRead == 0)
+            {
+                break;
+            }
+
+            if (!CryptHashData(hashHandle, buffer.data(), bytesRead, 0))
+            {
+                CryptReleaseContext(cryptoProvider, 0);
+                CryptDestroyHash(hashHandle);
+                CloseHandle(fileHandle);
+                throw std::exception("CtyptHashData failed");
+            }
+
+            readResult = ReadFile(fileHandle, buffer.data(), buffer.size(), &bytesRead, 0);
+        }
+
+        if (!readResult)
+        {
+            CryptReleaseContext(cryptoProvider, 0);
+            CryptDestroyHash(hashHandle);
+            CloseHandle(fileHandle);
+            throw std::exception("ReadFile failed");
+        }
+
+        DWORD cbHashSize = 0;
+        DWORD dwCount = sizeof(DWORD);
+        if (!CryptGetHashParam(hashHandle, HP_HASHSIZE, reinterpret_cast<BYTE*>(&cbHashSize), &dwCount, 0))
+            return {};
+
+        std::vector<BYTE> hashOutputBuffer(cbHashSize);
+        if (!CryptGetHashParam(hashHandle, HP_HASHVAL, hashOutputBuffer.data(), &cbHashSize, 0))
+            return {};
+
+        std::wostringstream oss;
+        oss.fill('0');
+        oss << std::hex;
+        for (const auto& b : hashOutputBuffer)
+        {
+            oss << std::setw(2) << static_cast<const unsigned int>(b);
+        }
+
+        CryptReleaseContext(cryptoProvider, 0);
+        CryptDestroyHash(hashHandle);
         CloseHandle(fileHandle);
-        return fileContents;
+        return oss.str();
     }
 }
