@@ -12,20 +12,13 @@ int main()
     try
     {
         auto directory = Filesystem::CurrentDir();
-        directory.append(L"\\.*");
+        directory.append(L"\\*");
 
-        std::wcout << directory << std::endl;
-        WIN32_FIND_DATA findData;
-        auto fileHandle = FindFirstFileW(directory.c_str(), &findData);
-        if (fileHandle == INVALID_HANDLE_VALUE)
-        {
-            throw std::exception("Unable to iterate directory");
-        }
-        do
+        for (const auto& findData : Filesystem::IterateDirectory(directory))
         {
             if (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
             {
-                std::wcout << findData.cFileName << L"  <DIR>\n";
+                std::wcout << findData.cFileName << L"\t<DIR>\n";
             }
             else
             {
@@ -33,17 +26,9 @@ int main()
                 filesize.LowPart = findData.nFileSizeLow;
                 filesize.HighPart = findData.nFileSizeHigh;
 
-                std::wcout << findData.cFileName << L"  " << filesize.QuadPart << L" bytes\n";
+                std::wcout << findData.cFileName << L"  " << filesize.QuadPart << L"\tbytes\n";
             }
-        } while (FindNextFile(fileHandle, &findData) != 0);
-
-        const auto dwError = GetLastError();
-        if (dwError != ERROR_NO_MORE_FILES)
-        {
-            throw std::exception("Unable to finish iterating directory");
         }
-
-        FindClose(fileHandle);
     }
     catch (std::exception& e)
     {
