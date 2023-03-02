@@ -11,10 +11,7 @@ int main()
 {
     try
     {
-        auto directory = Filesystem::CurrentDir();
-        directory.append(L"\\*");
-
-        for (const auto& findData : Filesystem::IterateDirectory(directory))
+        for (const auto& findData : Filesystem::IterateDirectory())
         {
             if (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
             {

@@ -9,5 +9,5 @@ export module Filesystem;
 namespace Filesystem
 {
 	export std::wstring CurrentDir();
-	export boost::coroutines2::coroutine<WIN32_FIND_DATA>::pull_type IterateDirectory(const std::wstring& dir);
+	export boost::coroutines2::coroutine<WIN32_FIND_DATA>::pull_type IterateDirectory(const std::wstring& dir = CurrentDir() + L"\\*");
 }
