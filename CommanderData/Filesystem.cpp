@@ -7,8 +7,10 @@ module;
 #include <fmt/core.h>
 #include <Windows.h>
 #include <iomanip>
+#include <boost/exception/all.hpp>
 
 module Filesystem;
+
 namespace Filesystem
 {
     std::wstring CurrentDir()
@@ -20,7 +22,7 @@ namespace Filesystem
         const auto pathLength = GetCurrentDirectoryW(requiredBufferLength, directory.data());
         if (pathLength == 0)
         {
-            throw std::exception("Unable to get current directory");
+            BOOST_THROW_EXCEPTION(FilesystemException("Unable to get current directory"));
         }
 
         return directory;
@@ -34,7 +36,7 @@ namespace Filesystem
                 auto findHandle = FindFirstFileW(dir.c_str(), &findData);
                 if (findHandle == INVALID_HANDLE_VALUE)
                 {
-                    throw std::exception("Unable to iterate directory");
+                    BOOST_THROW_EXCEPTION(FilesystemException("Unable to iterate directory") << FilePathInfo(dir));
                 }
                 do
                 {
@@ -44,7 +46,7 @@ namespace Filesystem
                 const auto dwError = GetLastError();
                 if (dwError != ERROR_NO_MORE_FILES)
                 {
-                    throw std::exception("Unable to finish iterating directory");
+                    BOOST_THROW_EXCEPTION(FilesystemException("Unable to finish iterating directory") << FilePathInfo(dir));
                 }
                 FindClose(findHandle);
             }
@@ -62,9 +64,9 @@ namespace Filesystem
             FILE_FLAG_SEQUENTIAL_SCAN,
             NULL);
 
-        if (fileHandle == INVALID_HANDLE_VALUE)
+        if (fileHandle != INVALID_HANDLE_VALUE)
         {
-            throw std::exception("Unable to open file");
+            BOOST_THROW_EXCEPTION(FilesystemException("Unable to open file") << FileNameInfo(file));
         }
 
         HCRYPTPROV cryptoProvider = NULL;
@@ -75,7 +77,7 @@ namespace Filesystem
             CRYPT_VERIFYCONTEXT))
         {
             CloseHandle(fileHandle);
-            throw std::exception("CryptAcquireContext failed");
+            BOOST_THROW_EXCEPTION(FilesystemException("CryptAcquireContext failed") << FileNameInfo(file));
         }
 
         HCRYPTPROV hashHandle = NULL;
@@ -83,7 +85,7 @@ namespace Filesystem
         {
             CloseHandle(fileHandle);
             CryptReleaseContext(cryptoProvider, 0);
-            throw std::exception("CryptCreateHash failed");
+            BOOST_THROW_EXCEPTION(FilesystemException("CryptCreateHash failed") << FileNameInfo(file));
         }
         
         auto buffer = std::array<BYTE, 1024>();
@@ -101,7 +103,7 @@ namespace Filesystem
                 CryptReleaseContext(cryptoProvider, 0);
                 CryptDestroyHash(hashHandle);
                 CloseHandle(fileHandle);
-                throw std::exception("CtyptHashData failed");
+                BOOST_THROW_EXCEPTION(FilesystemException("CtyptHashData failed") << FileNameInfo(file));
             }
 
             readResult = ReadFile(fileHandle, buffer.data(), buffer.size(), &bytesRead, 0);
@@ -112,7 +114,7 @@ namespace Filesystem
             CryptReleaseContext(cryptoProvider, 0);
             CryptDestroyHash(hashHandle);
             CloseHandle(fileHandle);
-            throw std::exception("ReadFile failed");
+            BOOST_THROW_EXCEPTION(FilesystemException("ReadFile failed") << FileNameInfo(file));
         }
 
         DWORD cbHashSize = 0;
@@ -120,7 +122,9 @@ namespace Filesystem
         if (!CryptGetHashParam(hashHandle, HP_HASHSIZE, reinterpret_cast<BYTE*>(&cbHashSize), &dwCount, 0))
             return {};
 
-        std::vector<BYTE> hashOutputBuffer(cbHashSize);
+        // NOTE: We don't expect to need to hash anything bigger than SHA256
+        static constexpr auto MAX_HASH_OUTPUT_SIZE = 32;
+        auto hashOutputBuffer = std::array<BYTE, MAX_HASH_OUTPUT_SIZE>();
         if (!CryptGetHashParam(hashHandle, HP_HASHVAL, hashOutputBuffer.data(), &cbHashSize, 0))
             return {};
 

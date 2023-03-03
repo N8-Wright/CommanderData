@@ -4,6 +4,7 @@
 #include <Windows.h>
 #include <fileapi.h>
 #include <handleapi.h>
+#include <boost/exception/all.hpp>
 
 import Filesystem;
 
@@ -28,9 +29,20 @@ int main()
             }
         }
     }
-    catch (std::exception& e)
+    catch (Filesystem::FilesystemException& e)
     {
+        std::cerr << boost::diagnostic_information(e) << std::endl;
         std::cerr << e.what();
+        if (const auto fileName = boost::get_error_info<Filesystem::FileNameInfo>(e))
+        {
+            std::wcerr << L" '" << fileName->c_str() << L"'";
+        }
+        if (const auto path = boost::get_error_info<Filesystem::FilePathInfo>(e))
+        {
+            std::wcerr << L", path: '" << path->c_str() << L"'";
+        }
+
+        std::cerr << std::endl;
     }
 }
 
