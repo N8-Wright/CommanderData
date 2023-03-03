@@ -26,6 +26,11 @@ int main()
 
                 const auto hash = Filesystem::HashFileContents(findData.cFileName);
                 std::wcout << findData.cFileName << L"\t" << hash << std::endl;
+
+                for (const auto& streamData : Filesystem::IterateStreams(findData.cFileName))
+                {
+                    std::wcout << L"\t" << streamData.cStreamName << L"\t" << streamData.StreamSize.QuadPart << L" bytes\n";
+                }
             }
         }
     }

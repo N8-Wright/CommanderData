@@ -13,6 +13,7 @@ module Filesystem;
 
 namespace Filesystem
 {
+    using namespace boost::coroutines2;
     std::wstring CurrentDir()
     {
         const auto requiredBufferLength = GetCurrentDirectoryW(0, NULL);
@@ -28,10 +29,10 @@ namespace Filesystem
         return directory;
     }
 
-    boost::coroutines2::coroutine<WIN32_FIND_DATA>::pull_type IterateDirectory(const std::wstring& dir)
+    coroutine<WIN32_FIND_DATA>::pull_type IterateDirectory(const std::wstring& dir)
     {
-        return boost::coroutines2::coroutine<WIN32_FIND_DATA>::pull_type(
-            [&](boost::coroutines2::coroutine<WIN32_FIND_DATA>::push_type& sink) {
+        return coroutine<WIN32_FIND_DATA>::pull_type(
+            [&](coroutine<WIN32_FIND_DATA>::push_type& sink) {
                 WIN32_FIND_DATA findData;
                 auto findHandle = FindFirstFileW(dir.c_str(), &findData);
                 if (findHandle == INVALID_HANDLE_VALUE)
@@ -48,6 +49,34 @@ namespace Filesystem
                 {
                     BOOST_THROW_EXCEPTION(FilesystemException("Unable to finish iterating directory") << FilePathInfo(dir));
                 }
+
+                FindClose(findHandle);
+            }
+        );
+    }
+
+    coroutine<WIN32_FIND_STREAM_DATA>::pull_type IterateStreams(const WCHAR* file)
+    {
+        return coroutine<WIN32_FIND_STREAM_DATA>::pull_type(
+            [file](coroutine<WIN32_FIND_STREAM_DATA>::push_type& sink)
+            {
+                WIN32_FIND_STREAM_DATA findData{};
+                auto findHandle = FindFirstStreamW(file, FindStreamInfoStandard, &findData, 0);
+                if (findHandle == INVALID_HANDLE_VALUE)
+                {
+                    BOOST_THROW_EXCEPTION(FilesystemException("Unable to iterate file streams") << FileNameInfo(file));
+                }
+                do
+                {
+                    sink(findData);
+                } while (FindNextStreamW(findHandle, &findData) != 0);
+
+                const auto lastError = GetLastError();
+                if (lastError != ERROR_HANDLE_EOF)
+                {
+                    BOOST_THROW_EXCEPTION(FilesystemException("Unable to finish iterating file streams") << FileNameInfo(file));
+                }
+
                 FindClose(findHandle);
             }
         );
@@ -64,7 +93,7 @@ namespace Filesystem
             FILE_FLAG_SEQUENTIAL_SCAN,
             NULL);
 
-        if (fileHandle != INVALID_HANDLE_VALUE)
+        if (fileHandle == INVALID_HANDLE_VALUE)
         {
             BOOST_THROW_EXCEPTION(FilesystemException("Unable to open file") << FileNameInfo(file));
         }
