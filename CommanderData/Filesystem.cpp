@@ -162,6 +162,25 @@ namespace Filesystem
         return hashOutputBuffer;
     }
 
+    void SetFileTime(std::wstring_view file, FILETIME filetime)
+    {
+        CAtlFile fileHandle;
+        if (S_OK != fileHandle.Create(file.data(),
+            GENERIC_WRITE,
+            FILE_SHARE_READ,
+            OPEN_EXISTING))
+        {
+            BOOST_THROW_EXCEPTION(FilesystemException("Unable to open file") << FileNameInfo2(file));
+        }
+
+        if (!::SetFileTime(fileHandle, nullptr, nullptr, &filetime))
+        {
+            BOOST_THROW_EXCEPTION(FilesystemException("Unable to set last write time") << FileNameInfo2(file));
+        }
+
+        fileHandle.Close();
+    }
+
     std::vector<BYTE> ReadFile(std::wstring_view file)
     {
         CAtlFile fileHandle;
