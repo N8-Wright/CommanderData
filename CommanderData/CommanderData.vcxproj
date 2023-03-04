@@ -134,6 +134,8 @@
     <ClCompile Include="CommanderData.cpp" />
     <ClCompile Include="Filesystem.cpp" />
     <ClCompile Include="Filesystem.ixx" />
+    <ClCompile Include="Util.cpp" />
+    <ClCompile Include="Util.ixx" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

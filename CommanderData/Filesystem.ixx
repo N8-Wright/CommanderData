@@ -46,7 +46,6 @@ namespace Filesystem
 	export boost::coroutines2::coroutine<WIN32_FIND_DATA>::pull_type IterateDirectory(const std::wstring& dir = CurrentDir() + L"\\*");
 	export boost::coroutines2::coroutine<WIN32_FIND_STREAM_DATA>::pull_type IterateStreams(const WCHAR* file);
 	export std::vector<BYTE> HashFileContents(std::wstring file);
-	export std::wstring GetSHA256(const WCHAR* file);
 
 	export std::vector<BYTE> ReadFile(std::wstring_view file);
 
