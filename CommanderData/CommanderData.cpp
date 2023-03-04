@@ -5,6 +5,8 @@
 #include <fileapi.h>
 #include <handleapi.h>
 #include <boost/exception/all.hpp>
+#include <shlwapi.h>
+#include <fmt/xchar.h>
 
 import Filesystem;
 
@@ -25,12 +27,13 @@ int main()
                 filesize.HighPart = findData.nFileSizeHigh;
 
                 const auto hash = Filesystem::HashFileContents(findData.cFileName);
-                std::wcout << findData.cFileName << L"\t" << hash << std::endl;
-
                 for (const auto& streamData : Filesystem::IterateStreams(findData.cFileName))
                 {
                     std::wcout << L"\t" << streamData.cStreamName << L"\t" << streamData.StreamSize.QuadPart << L" bytes\n";
                 }
+
+                Filesystem::WriteFile(fmt::format(L"{}:CommanderDataLastWriteTime", findData.cFileName), &findData.ftLastWriteTime, sizeof(findData.ftLastWriteTime));
+                Filesystem::WriteFile(fmt::format(L"{}:CommanderDataHash", findData.cFileName), hash);
             }
         }
     }
