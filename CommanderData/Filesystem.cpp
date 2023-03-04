@@ -120,7 +120,7 @@ namespace Filesystem
 
         auto buffer = std::array<BYTE, 1024>();
         DWORD bytesRead = 0;
-        auto readResult = ReadFile(fileHandle, buffer.data(), buffer.size(), &bytesRead, 0);
+        auto readResult = ::ReadFile(fileHandle, buffer.data(), buffer.size(), &bytesRead, 0);
         while (readResult)
         {
             if (bytesRead == 0)
@@ -136,7 +136,7 @@ namespace Filesystem
                 BOOST_THROW_EXCEPTION(FilesystemException("CtyptHashData failed") << FileNameInfo(file));
             }
 
-            readResult = ReadFile(fileHandle, buffer.data(), buffer.size(), &bytesRead, 0);
+            readResult = ::ReadFile(fileHandle, buffer.data(), buffer.size(), &bytesRead, 0);
         }
 
         if (!readResult)
@@ -196,7 +196,7 @@ namespace Filesystem
         
         auto buffer = std::array<BYTE, 1024>();
         DWORD bytesRead = 0;
-        auto readResult = ReadFile(fileHandle, buffer.data(), buffer.size(), &bytesRead, 0);
+        auto readResult = ::ReadFile(fileHandle, buffer.data(), buffer.size(), &bytesRead, 0);
         while (readResult)
         {
             if (bytesRead == 0)
@@ -212,7 +212,7 @@ namespace Filesystem
                 BOOST_THROW_EXCEPTION(FilesystemException("CtyptHashData failed") << FileNameInfo(file));
             }
 
-            readResult = ReadFile(fileHandle, buffer.data(), buffer.size(), &bytesRead, 0);
+            readResult = ::ReadFile(fileHandle, buffer.data(), buffer.size(), &bytesRead, 0);
         }
 
         if (!readResult)
@@ -248,6 +248,32 @@ namespace Filesystem
         return oss.str();
     }
 
+    std::vector<BYTE> ReadFile(std::wstring_view file)
+    {
+        CAtlFile fileHandle;
+        if (S_OK != fileHandle.Create(file.data(),
+            GENERIC_READ,
+            FILE_SHARE_READ,
+            OPEN_EXISTING))
+        {
+            BOOST_THROW_EXCEPTION(FileNotFoundException("Unable to open file") << FileNameInfo2(file));
+        }
+
+        ULONGLONG size{};
+        if (S_OK != fileHandle.GetSize(size))
+        {
+            BOOST_THROW_EXCEPTION(FilesystemException("Unable to get file size") << FileNameInfo2(file));
+        }
+
+        std::vector<BYTE> content(size);
+        if (S_OK != fileHandle.Read(content.data(), size))
+        {
+            BOOST_THROW_EXCEPTION(FilesystemException("Unable to read file") << FileNameInfo2(file));
+        }
+
+        return content;
+    }
+
     void WriteFile(std::wstring_view file, const void* data, size_t size)
     {
         CAtlFile fileHandle;
@@ -256,7 +282,6 @@ namespace Filesystem
             FILE_SHARE_READ,
             CREATE_ALWAYS))
         {
-            auto err = GetLastError();
             BOOST_THROW_EXCEPTION(FilesystemException("Unable to open file") << FileNameInfo2(file));
         }
 

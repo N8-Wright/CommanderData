@@ -28,11 +28,36 @@ namespace Filesystem
 		std::string m_what;
 	};
 
+	export struct FileNotFoundException : virtual boost::exception, virtual std::exception {
+	public:
+		FileNotFoundException(const char* what)
+			: m_what(what)
+		{}
+
+		virtual const char* what() const noexcept override
+		{
+			return m_what.c_str();
+		}
+	private:
+		std::string m_what;
+	};
+
     export std::wstring CurrentDir();
 	export boost::coroutines2::coroutine<WIN32_FIND_DATA>::pull_type IterateDirectory(const std::wstring& dir = CurrentDir() + L"\\*");
 	export boost::coroutines2::coroutine<WIN32_FIND_STREAM_DATA>::pull_type IterateStreams(const WCHAR* file);
 	export std::vector<BYTE> HashFileContents(std::wstring file);
 	export std::wstring GetSHA256(const WCHAR* file);
+
+	export std::vector<BYTE> ReadFile(std::wstring_view file);
+
+	export template <typename T>
+	T ReadFile(std::wstring_view file)
+	{
+		std::vector<BYTE> contents = Filesystem::ReadFile(file);
+		T tocast{};
+		memcpy(&tocast, contents.data(), contents.size());
+		return tocast;
+	}
 
 	export void WriteFile(std::wstring_view file, const void* data, size_t size);
 

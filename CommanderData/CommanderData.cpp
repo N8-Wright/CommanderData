@@ -32,8 +32,32 @@ int main()
                     std::wcout << L"\t" << streamData.cStreamName << L"\t" << streamData.StreamSize.QuadPart << L" bytes\n";
                 }
 
-                Filesystem::WriteFile(fmt::format(L"{}:CommanderDataLastWriteTime", findData.cFileName), &findData.ftLastWriteTime, sizeof(findData.ftLastWriteTime));
-                Filesystem::WriteFile(fmt::format(L"{}:CommanderDataHash", findData.cFileName), hash);
+                const auto lastWriteTimeStream = fmt::format(L"{}:CommanderDataLastWriteTime", findData.cFileName);
+                const auto hashStream = fmt::format(L"{}:CommanderDataHash", findData.cFileName);
+
+                FILETIME previousWriteTime{};
+                try
+                {
+                    previousWriteTime = Filesystem::ReadFile<FILETIME>(lastWriteTimeStream);
+                }
+                catch (Filesystem::FileNotFoundException&)
+                {
+                }
+
+                if (previousWriteTime.dwLowDateTime != findData.ftLastWriteTime.dwLowDateTime &&
+                    previousWriteTime.dwHighDateTime != findData.ftLastWriteTime.dwHighDateTime)
+                {
+                    Filesystem::WriteFile(fmt::format(L"{}:CommanderDataLastWriteTime", findData.cFileName), &findData.ftLastWriteTime, sizeof(findData.ftLastWriteTime));
+                    Filesystem::WriteFile(fmt::format(L"{}:CommanderDataHash", findData.cFileName), hash);
+                }
+                else
+                {
+                    const auto previousHash = Filesystem::ReadFile(hashStream);
+                    if (previousHash != hash)
+                    {
+                        BOOST_THROW_EXCEPTION(std::exception("File corruption!!!!"));
+                    }
+                }
             }
         }
     }
