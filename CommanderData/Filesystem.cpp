@@ -120,7 +120,8 @@ namespace Filesystem
 
         auto buffer = std::array<BYTE, 1024>();
         DWORD bytesRead = 0;
-        auto readResult = ::ReadFile(fileHandle, buffer.data(), buffer.size(), &bytesRead, 0);
+        static_assert(buffer.size() < MAXDWORD);
+        auto readResult = ::ReadFile(fileHandle, buffer.data(), static_cast<DWORD>(buffer.size()), &bytesRead, 0);
         while (readResult)
         {
             if (bytesRead == 0)
@@ -136,7 +137,7 @@ namespace Filesystem
                 BOOST_THROW_EXCEPTION(FilesystemException("CtyptHashData failed") << FileNameInfo(file));
             }
 
-            readResult = ::ReadFile(fileHandle, buffer.data(), buffer.size(), &bytesRead, 0);
+            readResult = ::ReadFile(fileHandle, buffer.data(), static_cast<DWORD>(buffer.size()), &bytesRead, 0);
         }
 
         if (!readResult)
@@ -199,7 +200,13 @@ namespace Filesystem
         }
 
         std::vector<BYTE> content(size);
-        if (S_OK != fileHandle.Read(content.data(), size))
+        // TODO: Support file reads that are greater than MAXDWORD.... or express this limitation better in the method signature
+        if (size >= MAXDWORD)
+        {
+            BOOST_THROW_EXCEPTION(FilesystemException(fmt::format("Unable to read file size greater than {}", MAXDWORD)) << FileNameInfo(std::wstring(file)));
+        }
+
+        if (S_OK != fileHandle.Read(content.data(), static_cast<DWORD>(size)))
         {
             BOOST_THROW_EXCEPTION(FilesystemException("Unable to read file") << FileNameInfo(std::wstring(file)));
         }
@@ -218,7 +225,13 @@ namespace Filesystem
             BOOST_THROW_EXCEPTION(FilesystemException("Unable to open file") << FileNameInfo(std::wstring(file)));
         }
 
-        if (S_OK != fileHandle.Write(data, size))
+        // TODO: Support file reads that are greater than MAXDWORD.... or express this limitation better in the method signature
+        if (size >= MAXDWORD)
+        {
+            BOOST_THROW_EXCEPTION(FilesystemException(fmt::format("Unable to read file size greater than {}", MAXDWORD)) << FileNameInfo(std::wstring(file)));
+        }
+
+        if (S_OK != fileHandle.Write(data, static_cast<DWORD>(size)))
         {
             BOOST_THROW_EXCEPTION(FilesystemException("Unable to write file") << FileNameInfo(std::wstring(file)));
         }
