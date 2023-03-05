@@ -170,12 +170,12 @@ namespace Filesystem
             FILE_SHARE_READ,
             OPEN_EXISTING))
         {
-            BOOST_THROW_EXCEPTION(FilesystemException("Unable to open file") << FileNameInfo2(file));
+            BOOST_THROW_EXCEPTION(FilesystemException("Unable to open file") << FileNameInfo(std::wstring(file)));
         }
 
         if (!::SetFileTime(fileHandle, nullptr, nullptr, &filetime))
         {
-            BOOST_THROW_EXCEPTION(FilesystemException("Unable to set last write time") << FileNameInfo2(file));
+            BOOST_THROW_EXCEPTION(FilesystemException("Unable to set last write time") << FileNameInfo(std::wstring(file)));
         }
 
         fileHandle.Close();
@@ -189,19 +189,19 @@ namespace Filesystem
             FILE_SHARE_READ,
             OPEN_EXISTING))
         {
-            BOOST_THROW_EXCEPTION(FileNotFoundException("Unable to open file") << FileNameInfo2(file));
+            BOOST_THROW_EXCEPTION(FileNotFoundException("Unable to open file") << FileNameInfo(std::wstring(file)));
         }
 
         ULONGLONG size{};
         if (S_OK != fileHandle.GetSize(size))
         {
-            BOOST_THROW_EXCEPTION(FilesystemException("Unable to get file size") << FileNameInfo2(file));
+            BOOST_THROW_EXCEPTION(FilesystemException("Unable to get file size") << FileNameInfo(std::wstring(file)));
         }
 
         std::vector<BYTE> content(size);
         if (S_OK != fileHandle.Read(content.data(), size))
         {
-            BOOST_THROW_EXCEPTION(FilesystemException("Unable to read file") << FileNameInfo2(file));
+            BOOST_THROW_EXCEPTION(FilesystemException("Unable to read file") << FileNameInfo(std::wstring(file)));
         }
 
         return content;
@@ -215,12 +215,12 @@ namespace Filesystem
             FILE_SHARE_READ,
             CREATE_ALWAYS))
         {
-            BOOST_THROW_EXCEPTION(FilesystemException("Unable to open file") << FileNameInfo2(file));
+            BOOST_THROW_EXCEPTION(FilesystemException("Unable to open file") << FileNameInfo(std::wstring(file)));
         }
 
         if (S_OK != fileHandle.Write(data, size))
         {
-            BOOST_THROW_EXCEPTION(FilesystemException("Unable to write file") << FileNameInfo2(file));
+            BOOST_THROW_EXCEPTION(FilesystemException("Unable to write file") << FileNameInfo(std::wstring(file)));
         }
 
         fileHandle.Close();

@@ -5,6 +5,7 @@ module;
 #include <boost/exception/exception.hpp>
 #include <Windows.h>
 #include <vector>
+#include <fmt/core.h>
 
 export module Filesystem;
 
@@ -12,13 +13,22 @@ namespace Filesystem
 {
 	export typedef boost::error_info<struct FilePathErrorInfo, std::wstring> FilePathInfo;
 	export typedef boost::error_info<struct FileNameErrorInfo, std::wstring> FileNameInfo;
-	export typedef boost::error_info<struct FileNameErrorInfo, std::wstring_view> FileNameInfo2;
 
 	export struct FilesystemException : virtual boost::exception, virtual std::exception {
 	public:
 		FilesystemException(const char *what)
-			: m_what(what)
-		{}
+		{
+			DWORD error = ::GetLastError();
+			std::string message = std::system_category().message(error);
+			m_what = fmt::format("{}. {}", what, message);
+		}
+
+		FilesystemException(std::string what)
+		{
+			DWORD error = ::GetLastError();
+			std::string message = std::system_category().message(error);
+			m_what = fmt::format("{}. {}", what, message);
+		}
 
 		virtual const char* what() const noexcept override
 		{
@@ -28,18 +38,11 @@ namespace Filesystem
 		std::string m_what;
 	};
 
-	export struct FileNotFoundException : virtual boost::exception, virtual std::exception {
+	export struct FileNotFoundException : public FilesystemException {
 	public:
 		FileNotFoundException(const char* what)
-			: m_what(what)
+			: FilesystemException(what)
 		{}
-
-		virtual const char* what() const noexcept override
-		{
-			return m_what.c_str();
-		}
-	private:
-		std::string m_what;
 	};
 
     export std::wstring CurrentDir();
