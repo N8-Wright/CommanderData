@@ -45,13 +45,12 @@ namespace Filesystem
                     sink(findData);
                 } while (FindNextFileW(findHandle, &findData) != 0);
 
+                FindClose(findHandle);
                 const auto dwError = GetLastError();
                 if (dwError != ERROR_NO_MORE_FILES)
                 {
                     BOOST_THROW_EXCEPTION(FilesystemException("Unable to finish iterating directory") << FilePathInfo(dir));
                 }
-
-                FindClose(findHandle);
             }
         );
     }
@@ -72,29 +71,25 @@ namespace Filesystem
                     sink(findData);
                 } while (FindNextStreamW(findHandle, &findData) != 0);
 
+                FindClose(findHandle);
                 const auto lastError = GetLastError();
                 if (lastError != ERROR_HANDLE_EOF)
                 {
                     BOOST_THROW_EXCEPTION(FilesystemException("Unable to finish iterating file streams") << FileNameInfo(file));
                 }
-
-                FindClose(findHandle);
             }
         );
     }
 
     std::vector<BYTE> HashFileContents(std::wstring file)
     {
-        HANDLE fileHandle = CreateFileW(
+        CAtlFile fileHandle;
+        if (S_OK != fileHandle.Create(
             file.data(),
             GENERIC_READ,
             FILE_SHARE_READ,
-            NULL,
             OPEN_EXISTING,
-            FILE_FLAG_SEQUENTIAL_SCAN,
-            NULL);
-
-        if (fileHandle == INVALID_HANDLE_VALUE)
+            FILE_FLAG_SEQUENTIAL_SCAN))
         {
             BOOST_THROW_EXCEPTION(FilesystemException("Unable to open file") << FileNameInfo(file));
         }
@@ -106,14 +101,12 @@ namespace Filesystem
             PROV_RSA_AES,
             CRYPT_VERIFYCONTEXT))
         {
-            CloseHandle(fileHandle);
             BOOST_THROW_EXCEPTION(FilesystemException("CryptAcquireContext failed") << FileNameInfo(file));
         }
 
         HCRYPTPROV hashHandle = NULL;
         if (!CryptCreateHash(cryptoProvider, CALG_SHA_256, 0, 0, &hashHandle))
         {
-            CloseHandle(fileHandle);
             CryptReleaseContext(cryptoProvider, 0);
             BOOST_THROW_EXCEPTION(FilesystemException("CryptCreateHash failed") << FileNameInfo(file));
         }
@@ -144,7 +137,6 @@ namespace Filesystem
         {
             CryptReleaseContext(cryptoProvider, 0);
             CryptDestroyHash(hashHandle);
-            CloseHandle(fileHandle);
             BOOST_THROW_EXCEPTION(FilesystemException("ReadFile failed") << FileNameInfo(file));
         }
 
@@ -159,7 +151,6 @@ namespace Filesystem
 
         CryptReleaseContext(cryptoProvider, 0);
         CryptDestroyHash(hashHandle);
-        CloseHandle(fileHandle);
         return hashOutputBuffer;
     }
 
@@ -178,8 +169,6 @@ namespace Filesystem
         {
             BOOST_THROW_EXCEPTION(FilesystemException("Unable to set last write time") << FileNameInfo(std::wstring(file)));
         }
-
-        fileHandle.Close();
     }
 
     std::vector<BYTE> ReadFile(std::wstring_view file)
@@ -235,7 +224,5 @@ namespace Filesystem
         {
             BOOST_THROW_EXCEPTION(FilesystemException("Unable to write file") << FileNameInfo(std::wstring(file)));
         }
-
-        fileHandle.Close();
     }
 }
