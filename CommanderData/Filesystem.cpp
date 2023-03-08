@@ -12,6 +12,8 @@ module;
 
 module Filesystem;
 
+import Hash;
+
 namespace Filesystem
 {
     using namespace boost::coroutines2;
@@ -83,6 +85,7 @@ namespace Filesystem
 
     std::vector<BYTE> HashFileContents(std::wstring file)
     {
+        using namespace Crypto;
         CAtlFile fileHandle;
         if (S_OK != fileHandle.Create(
             file.data(),
@@ -94,64 +97,37 @@ namespace Filesystem
             BOOST_THROW_EXCEPTION(FilesystemException("Unable to open file") << FileNameInfo(file));
         }
 
-        HCRYPTPROV cryptoProvider = NULL;
-        if (!CryptAcquireContext(&cryptoProvider,
-            NULL,
-            NULL,
-            PROV_RSA_AES,
-            CRYPT_VERIFYCONTEXT))
+        try
         {
-            BOOST_THROW_EXCEPTION(FilesystemException("CryptAcquireContext failed") << FileNameInfo(file));
-        }
+            const auto hash = Hash(HashAlgorithm::Sha256);
 
-        HCRYPTPROV hashHandle = NULL;
-        if (!CryptCreateHash(cryptoProvider, CALG_SHA_256, 0, 0, &hashHandle))
-        {
-            CryptReleaseContext(cryptoProvider, 0);
-            BOOST_THROW_EXCEPTION(FilesystemException("CryptCreateHash failed") << FileNameInfo(file));
-        }
-
-        auto buffer = std::array<BYTE, 1024>();
-        DWORD bytesRead = 0;
-        static_assert(buffer.size() < MAXDWORD);
-        auto readResult = ::ReadFile(fileHandle, buffer.data(), static_cast<DWORD>(buffer.size()), &bytesRead, 0);
-        while (readResult)
-        {
-            if (bytesRead == 0)
+            auto buffer = std::array<BYTE, 1024>();
+            DWORD bytesRead = 0;
+            static_assert(buffer.size() < MAXDWORD);
+            auto readResult = ::ReadFile(fileHandle, buffer.data(), static_cast<DWORD>(buffer.size()), &bytesRead, 0);
+            while (readResult)
             {
-                break;
+                if (bytesRead == 0)
+                {
+                    break;
+                }
+
+                hash.HashData(std::span(buffer.data(), bytesRead));
+                readResult = ::ReadFile(fileHandle, buffer.data(), static_cast<DWORD>(buffer.size()), &bytesRead, 0);
             }
 
-            if (!CryptHashData(hashHandle, buffer.data(), bytesRead, 0))
+            if (!readResult)
             {
-                CryptReleaseContext(cryptoProvider, 0);
-                CryptDestroyHash(hashHandle);
-                CloseHandle(fileHandle);
-                BOOST_THROW_EXCEPTION(FilesystemException("CtyptHashData failed") << FileNameInfo(file));
+                BOOST_THROW_EXCEPTION(FilesystemException("ReadFile failed") << FileNameInfo(file));
             }
 
-            readResult = ::ReadFile(fileHandle, buffer.data(), static_cast<DWORD>(buffer.size()), &bytesRead, 0);
+            return hash.GetResult();
         }
-
-        if (!readResult)
+        catch (HashException& e)
         {
-            CryptReleaseContext(cryptoProvider, 0);
-            CryptDestroyHash(hashHandle);
-            BOOST_THROW_EXCEPTION(FilesystemException("ReadFile failed") << FileNameInfo(file));
+            e << FileNameInfo(file);
+            throw;
         }
-
-        DWORD hashSize = 0;
-        DWORD count = sizeof(DWORD);
-        if (!CryptGetHashParam(hashHandle, HP_HASHSIZE, reinterpret_cast<BYTE*>(&hashSize), &count, 0))
-            BOOST_THROW_EXCEPTION(FilesystemException("CryptGetHashParam HP_HASHSIZE failed") << FileNameInfo(file));
-
-        std::vector<BYTE> hashOutputBuffer(hashSize);
-        if (!CryptGetHashParam(hashHandle, HP_HASHVAL, hashOutputBuffer.data(), &hashSize, 0))
-            BOOST_THROW_EXCEPTION(FilesystemException("CryptGetHashParam HP_HASHVAL failed") << FileNameInfo(file));
-
-        CryptReleaseContext(cryptoProvider, 0);
-        CryptDestroyHash(hashHandle);
-        return hashOutputBuffer;
     }
 
     void SetFileTime(std::wstring_view file, FILETIME filetime)
