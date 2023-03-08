@@ -55,7 +55,7 @@ namespace Crypto
 		}
 	}
 
-	std::vector<uint8_t> Hash::GetResult() const
+	HashValue Hash::GetResult() const
 	{
 		DWORD hashSize = 0;
 		DWORD count = sizeof(DWORD);
@@ -70,6 +70,6 @@ namespace Crypto
 			BOOST_THROW_EXCEPTION(HashException("CryptGetHashParam HP_HASHVAL failed"));
 		}
 
-		return hashOutputBuffer;
+		return HashValue(hashOutputBuffer);
 	}
 }

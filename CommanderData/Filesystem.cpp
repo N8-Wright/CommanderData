@@ -13,6 +13,7 @@ module;
 module Filesystem;
 
 import Hash;
+import HashValue;
 
 namespace Filesystem
 {
@@ -83,7 +84,7 @@ namespace Filesystem
         );
     }
 
-    std::vector<BYTE> HashFileContents(std::wstring file)
+    Crypto::HashValue HashFileContents(std::wstring file)
     {
         using namespace Crypto;
         CAtlFile fileHandle;

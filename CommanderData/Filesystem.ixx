@@ -8,6 +8,7 @@ module;
 #include <fmt/core.h>
 
 export module Filesystem;
+export import HashValue;
 
 namespace Filesystem
 {
@@ -48,7 +49,7 @@ namespace Filesystem
     export std::wstring CurrentDir();
 	export boost::coroutines2::coroutine<WIN32_FIND_DATA>::pull_type IterateDirectory(const std::wstring& dir = CurrentDir() + L"\\*");
 	export boost::coroutines2::coroutine<WIN32_FIND_STREAM_DATA>::pull_type IterateStreams(const WCHAR* file);
-	export std::vector<BYTE> HashFileContents(std::wstring file);
+	export Crypto::HashValue HashFileContents(std::wstring file);
 	export void SetFileTime(std::wstring_view file, FILETIME filetime);
 	export std::vector<BYTE> ReadFile(std::wstring_view file);
 

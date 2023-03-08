@@ -140,6 +140,7 @@
     <ClCompile Include="Filesystem.ixx" />
     <ClCompile Include="Hash.cpp" />
     <ClCompile Include="Hash.ixx" />
+    <ClCompile Include="HashValue.ixx" />
     <ClCompile Include="Util.cpp" />
     <ClCompile Include="Util.ixx" />
   </ItemGroup>

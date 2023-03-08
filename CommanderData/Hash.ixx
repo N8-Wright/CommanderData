@@ -7,6 +7,7 @@ module;
 #include <fmt/core.h>
 
 export module Hash;
+export import HashValue;
 
 namespace Crypto
 {
@@ -45,7 +46,7 @@ namespace Crypto
 		Hash(HashAlgorithm algorithm);
 		~Hash();
 		void HashData(std::span<uint8_t> bytes) const;
-		std::vector<uint8_t> GetResult() const;
+		HashValue GetResult() const;
 	private:
 		HCRYPTPROV m_cryptoProvider;
 		HCRYPTPROV m_hashHandle;
