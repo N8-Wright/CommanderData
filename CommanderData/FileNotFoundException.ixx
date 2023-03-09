@@ -7,8 +7,6 @@ namespace Filesystem
 {
 	export struct FileNotFoundException : public FilesystemException {
 	public:
-		FileNotFoundException(const char* what)
-			: FilesystemException(what)
-		{}
+		FileNotFoundException(const char* what);
 	};
 }

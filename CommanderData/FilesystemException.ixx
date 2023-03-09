@@ -1,7 +1,6 @@
 module;
 #include <boost/exception/all.hpp>
-#include <fmt/core.h>
-#include <Windows.h>
+#include <string>
 export module FilesystemException;
 
 namespace Filesystem
@@ -11,24 +10,9 @@ namespace Filesystem
 
 	export struct FilesystemException : virtual boost::exception, virtual std::exception {
 	public:
-		FilesystemException(const char* what)
-		{
-			DWORD error = ::GetLastError();
-			std::string message = std::system_category().message(error);
-			m_what = fmt::format("{}. {}", what, message);
-		}
-
-		FilesystemException(std::string what)
-		{
-			DWORD error = ::GetLastError();
-			std::string message = std::system_category().message(error);
-			m_what = fmt::format("{}. {}", what, message);
-		}
-
-		virtual const char* what() const noexcept override
-		{
-			return m_what.c_str();
-		}
+		FilesystemException(const char* what);
+		FilesystemException(std::string what);
+		virtual const char* what() const noexcept override;
 	private:
 		std::string m_what;
 	};

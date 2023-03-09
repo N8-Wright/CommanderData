@@ -137,11 +137,17 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CommanderData.cpp" />
+    <ClCompile Include="FileNotFoundException.cpp" />
     <ClCompile Include="FileNotFoundException.ixx" />
+    <ClCompile Include="Filesystem.cpp" />
     <ClCompile Include="Filesystem.ixx" />
+    <ClCompile Include="FilesystemException.cpp" />
     <ClCompile Include="FilesystemException.ixx" />
+    <ClCompile Include="Hash.cpp" />
     <ClCompile Include="Hash.ixx" />
+    <ClCompile Include="HashException.cpp" />
     <ClCompile Include="HashException.ixx" />
+    <ClCompile Include="HashValue.cpp" />
     <ClCompile Include="HashValue.ixx" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

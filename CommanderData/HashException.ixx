@@ -9,24 +9,9 @@ namespace Crypto
 {
 	export struct HashException : virtual boost::exception, virtual std::exception {
 	public:
-		HashException(const char* what)
-		{
-			DWORD error = ::GetLastError();
-			std::string message = std::system_category().message(error);
-			m_what = fmt::format("{}. {}", what, message);
-		}
-
-		HashException(const std::string& what)
-		{
-			DWORD error = ::GetLastError();
-			std::string message = std::system_category().message(error);
-			m_what = fmt::format("{}. {}", what, message);
-		}
-
-		virtual const char* what() const noexcept override
-		{
-			return m_what.c_str();
-		}
+		HashException(const char* what);
+		HashException(const std::string& what);
+		virtual const char* what() const noexcept override;
 	private:
 		std::string m_what;
 	};
