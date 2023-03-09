@@ -21,22 +21,19 @@
     <ClCompile Include="Filesystem.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Filesystem.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Util.ixx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Util.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Hash.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Hash.cpp">
+    <ClCompile Include="HashValue.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="HashValue.ixx">
+    <ClCompile Include="FilesystemException.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HashException.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FileNotFoundException.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
