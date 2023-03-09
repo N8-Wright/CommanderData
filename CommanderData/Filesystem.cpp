@@ -147,7 +147,7 @@ namespace Filesystem
 		}
 	}
 
-	std::vector<BYTE> ReadFile(std::wstring_view file)
+	std::vector<uint8_t> ReadFile(std::wstring_view file)
 	{
 		CAtlFile fileHandle;
 		if (S_OK != fileHandle.Create(file.data(),
@@ -164,7 +164,7 @@ namespace Filesystem
 			BOOST_THROW_EXCEPTION(FilesystemException("Unable to get file size") << FileNameInfo(std::wstring(file)));
 		}
 
-		std::vector<BYTE> content(size);
+		std::vector<uint8_t> content(size);
 		// TODO: Support file reads that are greater than MAXDWORD.... or express this limitation better in the method signature
 		if (size >= MAXDWORD)
 		{
