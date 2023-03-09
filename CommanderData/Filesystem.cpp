@@ -37,22 +37,22 @@ namespace Filesystem
 		return coroutine<WIN32_FIND_DATA>::pull_type(
 			[&](coroutine<WIN32_FIND_DATA>::push_type& sink) {
 				WIN32_FIND_DATA findData;
-		auto findHandle = FindFirstFileW(dir.c_str(), &findData);
-		if (findHandle == INVALID_HANDLE_VALUE)
-		{
-			BOOST_THROW_EXCEPTION(FilesystemException("Unable to iterate directory") << FilePathInfo(dir));
-		}
-		do
-		{
-			sink(findData);
-		} while (FindNextFileW(findHandle, &findData) != 0);
+				auto findHandle = FindFirstFileW(dir.c_str(), &findData);
+				if (findHandle == INVALID_HANDLE_VALUE)
+				{
+					BOOST_THROW_EXCEPTION(FilesystemException("Unable to iterate directory") << FilePathInfo(dir));
+				}
+				do
+				{
+					sink(findData);
+				} while (FindNextFileW(findHandle, &findData) != 0);
 
-		FindClose(findHandle);
-		const auto dwError = GetLastError();
-		if (dwError != ERROR_NO_MORE_FILES)
-		{
-			BOOST_THROW_EXCEPTION(FilesystemException("Unable to finish iterating directory") << FilePathInfo(dir));
-		}
+				FindClose(findHandle);
+				const auto dwError = GetLastError();
+				if (dwError != ERROR_NO_MORE_FILES)
+				{
+					BOOST_THROW_EXCEPTION(FilesystemException("Unable to finish iterating directory") << FilePathInfo(dir));
+				}
 			}
 		);
 	}
@@ -63,22 +63,22 @@ namespace Filesystem
 			[file](coroutine<WIN32_FIND_STREAM_DATA>::push_type& sink)
 			{
 				WIN32_FIND_STREAM_DATA findData{};
-		auto findHandle = FindFirstStreamW(file, FindStreamInfoStandard, &findData, 0);
-		if (findHandle == INVALID_HANDLE_VALUE)
-		{
-			BOOST_THROW_EXCEPTION(FilesystemException("Unable to iterate file streams") << FileNameInfo(file));
-		}
-		do
-		{
-			sink(findData);
-		} while (FindNextStreamW(findHandle, &findData) != 0);
+				auto findHandle = FindFirstStreamW(file, FindStreamInfoStandard, &findData, 0);
+				if (findHandle == INVALID_HANDLE_VALUE)
+				{
+					BOOST_THROW_EXCEPTION(FilesystemException("Unable to iterate file streams") << FileNameInfo(file));
+				}
+				do
+				{
+					sink(findData);
+				} while (FindNextStreamW(findHandle, &findData) != 0);
 
-		FindClose(findHandle);
-		const auto lastError = GetLastError();
-		if (lastError != ERROR_HANDLE_EOF)
-		{
-			BOOST_THROW_EXCEPTION(FilesystemException("Unable to finish iterating file streams") << FileNameInfo(file));
-		}
+				FindClose(findHandle);
+				const auto lastError = GetLastError();
+				if (lastError != ERROR_HANDLE_EOF)
+				{
+					BOOST_THROW_EXCEPTION(FilesystemException("Unable to finish iterating file streams") << FileNameInfo(file));
+				}
 			}
 		);
 	}
