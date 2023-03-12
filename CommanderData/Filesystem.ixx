@@ -22,6 +22,7 @@ namespace Filesystem
 	export Crypto::HashValue HashFileContents(const std::wstring& file);
 	export void SetFileTime(std::wstring_view file, FILETIME filetime);
 	export std::vector<uint8_t> ReadFile(std::wstring_view file);
+	export void DelFile(const std::wstring& file);
 
 	export template <typename T>
 	T ReadFile(std::wstring_view file)

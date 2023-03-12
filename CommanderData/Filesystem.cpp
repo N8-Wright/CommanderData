@@ -179,6 +179,14 @@ namespace Filesystem
 		return content;
 	}
 
+	void DelFile(const std::wstring& file)
+	{
+		if (!::DeleteFileW(file.c_str()))
+		{
+			BOOST_THROW_EXCEPTION(FilesystemException("Unable to delete file") << FileNameInfo(file));
+		}
+	}
+
 	void WriteFile(std::wstring_view file, const void* data, size_t size)
 	{
 		CAtlFile fileHandle;
