@@ -101,7 +101,7 @@ namespace Filesystem
 		{
 			const auto hash = Hash(HashAlgorithm::Sha256);
 
-			auto buffer = std::array<BYTE, 1024>();
+			auto buffer = std::array<BYTE, 4096>();
 			DWORD bytesRead = 0;
 			static_assert(buffer.size() < MAXDWORD);
 			auto readResult = ::ReadFile(fileHandle, buffer.data(), static_cast<DWORD>(buffer.size()), &bytesRead, 0);
